@@ -1,4 +1,4 @@
-# BlackDye Stream Cipher
+# BlackDye Cipher
 
-High speed stream cipher - 256 bit
+High speed cipher - 256 bit
 
