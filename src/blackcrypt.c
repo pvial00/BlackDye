@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
         fread(&nonce, nonce_length, 1, randfile);
         fclose(randfile);
         fwrite(nonce, 1, nonce_length, outfile);
-	unsigned char salt[] = "RedDyeCipher";
+	unsigned char salt[] = "BlackDyeCipher";
 	int iter = 10000;
 	PKCS5_PBKDF2_HMAC (password, sizeof(password) -1, salt, sizeof(salt)-1, iter, EVP_sha1(), keylen, key);
         keysetup(key, nonce);
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
             blocks += 1;
         }
         fread(nonce, 1, nonce_length, infile);
-	unsigned char salt[] = "RedDyeCipher";
+	unsigned char salt[] = "BlackDyeCipher";
 	int iter = 10000;
 	PKCS5_PBKDF2_HMAC (password, sizeof(password) -1, salt, sizeof(salt)-1, iter, EVP_sha1(), keylen, key);
         keysetup(key, nonce);
