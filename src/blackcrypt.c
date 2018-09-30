@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <openssl/evp.h>
+#include "reddye_kdf.c"
 
 int keylen = 32;
 int k[32] = {0};
@@ -69,15 +70,15 @@ void annihilate() {
     k[31] = (k[4] + k[10] + k[19]) & 0xff;
 }
 
-void crush(int a, int b, int c, int d) {
-    k[a] = (k[a] + k[b]) & 0xff;
-    k[b] = (k[b] + k[c]) & 0xff;
-    k[c] = (k[d] + k[a]) & 0xff;
-    k[d] = (k[b] + k[c]) & 0xff;
-    k[d] = (k[a] + k[d]) & 0xff;
-    k[b] = (k[c] + k[b]) & 0xff;
-    k[a] = (k[a] + k[c]) & 0xff;
-    k[c] = (k[d] + k[b]) & 0xff;
+void crush(int a, int b, int c, int d, int e, int f, int g, int h) {
+    k[a] = (((k[a] + k[b]) ^ k[e]) ^ k[f]);
+    k[b] = (((k[c] ^ k[d]) + k[g]) & 0xff) ^ k[h];
+    k[c] = (((k[b] + k[c]) ^ k[f]) ^ k[g]);
+    k[d] = (((k[d] ^ k[e]) + k[h]) & 0xff)  ^ k[a];
+    k[e] = (((k[e] + k[a]) ^ k[b]) ^ k[c]);
+    k[f] = (((k[f] ^ k[g]) + k[c]) & 0xff) ^ k[d];
+    k[g] = (((k[g] + k[h]) ^ k[a]) ^ k[b]);
+    k[h] = (((k[h] ^ k[b]) + k[d]) & 0xff) ^ k[e];
 }
 
 void usage() {
@@ -114,6 +115,8 @@ int main(int argc, char *argv[]) {
     int c = 0;
     int b = 0;
     int m = 0;
+    int r;
+    int rounds = 1;
     if (strcmp(mode, "encrypt") == 0) {
         long blocks = fsize / buflen;
         long extra = fsize % buflen;
@@ -126,31 +129,18 @@ int main(int argc, char *argv[]) {
         fwrite(nonce, 1, nonce_length, outfile);
 	unsigned char salt[] = "BlackDyeCipher";
 	int iter = 10000;
-	PKCS5_PBKDF2_HMAC (password, sizeof(password) -1, salt, sizeof(salt)-1, iter, EVP_sha1(), keylen, key);
+	kdf(password, key, salt, iter, keylen);
         keysetup(key, nonce);
         for (int d = 0; d < blocks; d++) {
 	    for (m = 0; m < keylen; m++) {
 	        temp[m] = k[m]; }
-	    annihilate();
-	    crush(14, 17, 22, 30);
-	    annihilate();
-	    crush(12, 7, 2, 8);
-	    annihilate();
-	    crush(24, 18, 9, 31);
-	    annihilate();
-	    crush(3, 15, 19, 28);
-	    annihilate();
-	    crush(23, 27, 29, 26);
-	    annihilate();
-	    crush(10, 6, 25, 16);
-	    annihilate();
-	    crush(4, 21, 11, 0);
-	    annihilate();
-	    crush(13, 20, 5, 1);
+	    crush(11, 14, 13, 0, 5, 25, 30, 19);
+	    crush(31, 8, 27, 22, 6, 10, 20, 12);
+	    crush(4, 7, 9, 24, 26, 16, 1, 21);
+	    crush(3, 2, 29, 18, 23, 17, 15, 28);
 	    annihilate();
 	    for (m = 0; m < keylen; m++) {
-	        k[m] = (k[m] + temp[m] + c) & 0xff;
-		c = (c + 1) & 0xff;
+	        k[m] = (k[m] + temp[m]) & 0xff;
 	    }
             fread(block, buflen, 1, infile);
             if (d == (blocks - 1) && extra != 0) {
@@ -185,31 +175,18 @@ int main(int argc, char *argv[]) {
         fread(nonce, 1, nonce_length, infile);
 	unsigned char salt[] = "BlackDyeCipher";
 	int iter = 10000;
-	PKCS5_PBKDF2_HMAC (password, sizeof(password) -1, salt, sizeof(salt)-1, iter, EVP_sha1(), keylen, key);
+	kdf(password, key, salt, iter, keylen);
         keysetup(key, nonce);
         for (int d = 0; d < blocks; d++) {
 	    for (m = 0; m < keylen; m++) {
 	        temp[m] = k[m]; }
-	    annihilate();
-	    crush(14, 17, 22, 30);
-	    annihilate();
-	    crush(12, 7, 2, 8);
-	    annihilate();
-	    crush(24, 18, 9, 31);
-	    annihilate();
-	    crush(3, 15, 19, 28);
-	    annihilate();
-	    crush(23, 27, 29, 26);
-	    annihilate();
-	    crush(10, 6, 25, 16);
-	    annihilate();
-	    crush(4, 21, 11, 0);
-	    annihilate();
-	    crush(13, 20, 5, 1);
+	    crush(11, 14, 13, 0, 5, 25, 30, 19);
+	    crush(31, 8, 27, 22, 6, 10, 20, 12);
+	    crush(4, 7, 9, 24, 26, 16, 1, 21);
+	    crush(3, 2, 29, 18, 23, 17, 15, 28);
 	    annihilate();
 	    for (m = 0; m < keylen; m++) {
-	        k[m] = (k[m] + temp[m] + c) & 0xff;
-		c = (c + 1) & 0xff;
+	        k[m] = (k[m] + temp[m]) & 0xff;
 	    }
             fread(block, buflen, 1, infile);
             if ((d == (blocks - 1)) && extra != 0) {
