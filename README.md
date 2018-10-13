@@ -1,5 +1,6 @@
 # BlackDye Block Cipher
 
+*** DO NOT USE THIS CIPHER!!!  PURELY EXPERIMENTAL CODE
 *** Warning BlackDye has not undergone heavy cryptanalysis and should not be used in production systems
 
 High speed block cipher - 256 bit
